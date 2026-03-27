@@ -1,0 +1,62 @@
+name: Update Plugin SHA
+
+on:
+  workflow_call:
+    inputs:
+      plugin-name:
+        description: "Plugin name as it appears in marketplace.json"
+        required: true
+        type: string
+      sha:
+        description: "Full 40-char commit SHA to pin the plugin to"
+        required: true
+        type: string
+    secrets:
+      marketplace-token:
+        description: "PAT with write access to the marketplace repo"
+        required: true
+
+jobs:
+  update-sha:
+    name: Update ${{ inputs.plugin-name }} → ${{ inputs.sha }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout marketplace
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          repository: schmitthub/claude-plugins
+          token: ${{ secrets.marketplace-token }}
+
+      - name: Update SHA in marketplace.json
+        run: |
+          PLUGIN="${{ inputs.plugin-name }}"
+          SHA="${{ inputs.sha }}"
+          MARKETPLACE=".claude-plugin/marketplace.json"
+
+          # Validate inputs
+          if ! [[ "$SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::Invalid SHA: must be 40 hex characters"
+            exit 1
+          fi
+
+          # Check plugin exists in marketplace
+          if ! jq -e --arg name "$PLUGIN" '.plugins[] | select(.name == $name)' "$MARKETPLACE" > /dev/null 2>&1; then
+            echo "::error::Plugin '$PLUGIN' not found in marketplace.json"
+            exit 1
+          fi
+
+          # Update the SHA for the matching plugin
+          jq --arg name "$PLUGIN" --arg sha "$SHA" \
+            '(.plugins[] | select(.name == $name).source.sha) = $sha' \
+            "$MARKETPLACE" > tmp.json && mv tmp.json "$MARKETPLACE"
+
+          echo "Updated $PLUGIN to $SHA"
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .claude-plugin/marketplace.json
+          git diff --cached --quiet && echo "No changes" && exit 0
+          git commit -m "chore: update ${{ inputs.plugin-name }} to ${{ inputs.sha }}"
+          git push

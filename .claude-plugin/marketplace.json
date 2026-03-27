@@ -1,0 +1,22 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "claude-plugins",
+  "description": "Claude Code plugins by schmitthub",
+  "owner": {
+    "name": "schmitthub"
+  },
+  "plugins": [
+    {
+      "name": "clawker-support",
+      "description": "Clawker support expert for setup, configuration, and troubleshooting",
+      "source": {
+        "source": "git-subdir",
+        "url": "schmitthub/clawker",
+        "path": "claude-plugin/clawker-support",
+        "ref": "main",
+        "sha": "UPDATE_AFTER_MERGE"
+      },
+      "homepage": "https://docs.clawker.dev"
+    }
+  ]
+}

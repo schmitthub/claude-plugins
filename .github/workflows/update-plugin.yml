@@ -1,4 +1,4 @@
-name: Update Plugin SHA
+name: Update Plugin
 
 on:
   workflow_call:
@@ -17,7 +17,7 @@ on:
         required: true
 
 jobs:
-  update-sha:
+  update-plugin:
     name: Update ${{ inputs.plugin-name }} → ${{ inputs.sha }}
     runs-on: ubuntu-latest
     steps:
@@ -27,30 +27,81 @@ jobs:
           repository: schmitthub/claude-plugins
           token: ${{ secrets.marketplace-token }}
 
-      - name: Update SHA in marketplace.json
+      - name: Validate inputs
         run: |
-          PLUGIN="${{ inputs.plugin-name }}"
-          SHA="${{ inputs.sha }}"
-          MARKETPLACE=".claude-plugin/marketplace.json"
-
-          # Validate inputs
-          if ! [[ "$SHA" =~ ^[0-9a-f]{40}$ ]]; then
+          if ! [[ "${{ inputs.sha }}" =~ ^[0-9a-f]{40}$ ]]; then
             echo "::error::Invalid SHA: must be 40 hex characters"
             exit 1
           fi
 
-          # Check plugin exists in marketplace
-          if ! jq -e --arg name "$PLUGIN" '.plugins[] | select(.name == $name)' "$MARKETPLACE" > /dev/null 2>&1; then
+      - name: Resolve plugin source repo
+        id: source
+        run: |
+          PLUGIN="${{ inputs.plugin-name }}"
+          MARKETPLACE=".claude-plugin/marketplace.json"
+
+          SOURCE=$(jq -r --arg name "$PLUGIN" \
+            '.plugins[] | select(.name == $name).source' \
+            "$MARKETPLACE")
+
+          if [ "$SOURCE" = "null" ] || [ -z "$SOURCE" ]; then
             echo "::error::Plugin '$PLUGIN' not found in marketplace.json"
             exit 1
           fi
 
-          # Update the SHA for the matching plugin
-          jq --arg name "$PLUGIN" --arg sha "$SHA" \
-            '(.plugins[] | select(.name == $name).source.sha) = $sha' \
-            "$MARKETPLACE" > tmp.json && mv tmp.json "$MARKETPLACE"
+          URL=$(echo "$SOURCE" | jq -r '.url')
+          PATH_IN_REPO=$(echo "$SOURCE" | jq -r '.path // ""')
 
-          echo "Updated $PLUGIN to $SHA"
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+          echo "path=$PATH_IN_REPO" >> "$GITHUB_OUTPUT"
+
+      - name: Fetch plugin.json from source repo at target SHA
+        id: version
+        env:
+          GH_TOKEN: ${{ secrets.marketplace-token }}
+        run: |
+          SHA="${{ inputs.sha }}"
+          URL="${{ steps.source.outputs.url }}"
+          PLUGIN_PATH="${{ steps.source.outputs.path }}"
+
+          if [ -n "$PLUGIN_PATH" ]; then
+            JSON_PATH="${PLUGIN_PATH}/.claude-plugin/plugin.json"
+          else
+            JSON_PATH=".claude-plugin/plugin.json"
+          fi
+
+          VERSION=$(gh api "repos/${URL}/contents/${JSON_PATH}?ref=${SHA}" \
+            --jq '.content' | base64 -d | jq -r '.version // empty')
+
+          if [ -z "$VERSION" ]; then
+            echo "::warning::No version field in plugin.json — SHA will be updated but version will not"
+            echo "has_version=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+            echo "has_version=true" >> "$GITHUB_OUTPUT"
+            echo "Resolved version: $VERSION"
+          fi
+
+      - name: Update marketplace.json
+        run: |
+          PLUGIN="${{ inputs.plugin-name }}"
+          SHA="${{ inputs.sha }}"
+          VERSION="${{ steps.version.outputs.version }}"
+          HAS_VERSION="${{ steps.version.outputs.has_version }}"
+          MARKETPLACE=".claude-plugin/marketplace.json"
+
+          if [ "$HAS_VERSION" = "true" ]; then
+            jq --arg name "$PLUGIN" --arg sha "$SHA" --arg ver "$VERSION" \
+              '(.plugins[] | select(.name == $name)) |=
+                (.source.sha = $sha | .version = $ver)' \
+              "$MARKETPLACE" > tmp.json && mv tmp.json "$MARKETPLACE"
+            echo "Updated $PLUGIN to $SHA (version $VERSION)"
+          else
+            jq --arg name "$PLUGIN" --arg sha "$SHA" \
+              '(.plugins[] | select(.name == $name).source.sha) = $sha' \
+              "$MARKETPLACE" > tmp.json && mv tmp.json "$MARKETPLACE"
+            echo "Updated $PLUGIN to $SHA (no version)"
+          fi
 
       - name: Commit and push
         run: |

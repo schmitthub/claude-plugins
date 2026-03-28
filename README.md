@@ -17,5 +17,5 @@ claude plugin marketplace add schmitthub/claude-plugins
 ### clawker-support
 
 ```bash
-claude plugin install clawker-support@claude-plugins
+claude plugin install clawker-support@schmitthub-plugins
 ```

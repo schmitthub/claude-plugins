@@ -14,10 +14,10 @@
         "url": "schmitthub/clawker",
         "path": "claude-plugin/clawker-support",
         "ref": "main",
-        "sha": "36ddee78e9d38b6eab1e3dd30c4835965f56ecf1"
+        "sha": "d2f9b5a1014fdd7c185f54f5f9a441da9b13970c"
       },
       "homepage": "https://docs.clawker.dev",
-      "version": "0.4.1"
+      "version": "0.5.0"
     }
   ]
 }

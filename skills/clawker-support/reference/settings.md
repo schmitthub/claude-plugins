@@ -56,6 +56,11 @@ interactively via `clawker settings edit`.
    ```bash
    cat ~/.config/clawker/settings.yaml
    ```
+   A value of the wrong type does not fall back to the default — it fails the
+   load and *every* clawker command errors with `config: loading settings:
+   ... cannot unmarshal ...`. That is a different symptom from "not taking
+   effect". Unknown keys are ignored silently, and a bare `key:` with no value
+   is unset (the default shows through) — both look like a no-op change.
 
 2. **Use the editor to inspect current state**: `clawker settings edit`
    shows the merged settings with current values.

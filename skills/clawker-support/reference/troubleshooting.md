@@ -10,7 +10,7 @@ reference files. Check these first if the issue matches:
 
 | Issue domain | Reference | Section |
 | --- | --- | --- |
-| Build failures, config not taking effect | `reference/project-config.md` | Troubleshooting |
+| Build failures, config load errors, config not taking effect | `reference/project-config.md` | Troubleshooting |
 | MCP server setup and debugging | `reference/mcp-recipes.md` | Troubleshooting |
 | Settings not taking effect | `reference/settings.md` | Troubleshooting |
 | Disk space, build cache, Docker cleanup | `reference/docker-hygiene.md` | Full reference |
@@ -265,6 +265,14 @@ point them at the `CHANGELOG.md` at the root of the clawker repository.
 
 User reports `clawker firewall *` or container commands hang, time out, or
 report `connection refused` against the CP.
+
+**A brief wait right after a cold start is expected, not a fault.** CP serves
+its admin API only once its startup checks have passed — with the firewall
+enabled that includes bringing the Envoy + CoreDNS stack up, which on a first
+run can include an image pull. A command issued in that window waits for CP to
+become ready instead of failing. Treat it as a problem when the wait never
+ends, or when the command fails *immediately* with `connection refused` —
+that means nothing is listening at all.
 
 1. **Check CP health**:
    ```bash

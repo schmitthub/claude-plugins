@@ -30,6 +30,14 @@ filename lookup (no dot prefix) — the directory itself is the namespace.
 Closer files win over farther ones. Within the same directory, local
 overrides win over project config.
 
+**Unset vs. explicitly empty.** A bare `key:` with no value (YAML null) is
+*unset*, not "empty" — the merge skips it, so the next layer down (or the
+built-in default) shows through, and the line stays put on disk. To override
+with an empty value, write the explicit empty form (`key: ""`, `key: []`) —
+that is a real value and wins the merge. Keys merged by union (`aliases`,
+`add_domains`, `bundles`) merge entry-by-entry, so an empty list or map there
+adds nothing rather than clearing lower layers.
+
 Fetch `https://docs.clawker.dev/configuration` for the current merge
 behavior, field-level precedence details, and available merge strategies.
 
@@ -39,11 +47,12 @@ The project config's `aliases` key defines CLI shortcuts expanded before
 execution (the value is appended to `clawker`, with `$1..$N` positional
 placeholders). Aliases merge key-by-key across ALL layers — walk-up files,
 the user-level `clawker.yaml` in the config dir, and shipped defaults
-(`go` = disposable agent run, `wt` = agent on a worktree). Managed via the
-`clawker alias` command group: `set` writes the user-level file, `export`
-publishes active aliases into the project's own config file, `delete`
-removes a name from every file layer (shipped defaults can only be
-overridden, never deleted). Fetch `https://docs.clawker.dev/aliases` for
+(`go` = disposable agent run, `wt` = agent on a worktree). A name is a single
+command token — no whitespace, no leading `-`; dots are allowed (`a.b` is one
+alias name, not a nested key). Managed via the `clawker alias` command group:
+`set` writes the user-level file, `export` publishes active aliases into the
+project's own config file, `delete` removes a name from every file layer
+(shipped defaults can only be overridden, never deleted). Fetch `https://docs.clawker.dev/aliases` for
 expansion semantics and the full rules.
 
 ## Reference Config Samples
@@ -160,6 +169,25 @@ triggers a build).
    clawker build --no-cache
    ```
 
+### Every clawker command fails with a config error
+
+A key whose value doesn't match its schema type fails at load, so every
+command aborts before doing anything:
+
+```
+config: loading project config: ... line 2: cannot unmarshal !!str `notalist` into []string
+```
+
+(`config: loading settings:` for `settings.yaml`.) This is deliberate — a
+mistyped value is never silently tolerated or quietly replaced by the default.
+The line number refers to the *merged* view, not to one file, so with several
+layers discovered, check each of them for the named field. Fix the value's
+shape (list vs string vs bool) and rerun.
+
+Unknown or misspelled keys are the opposite case: the load ignores them (and
+preserves them on save), so they never error — they just never do anything.
+See below.
+
 ### Config not taking effect
 
 User changed their clawker config but the change doesn't seem to apply.
@@ -183,3 +211,9 @@ User changed their clawker config but the change doesn't seem to apply.
 
 4. **Local override hiding changes**: Check if a local override file exists
    and shadows the field you changed.
+
+5. **Unknown key or unset value**: a key that isn't in the schema is ignored
+   silently — a typo'd field name looks exactly like "my change did nothing".
+   A bare `key:` with no value is unset, so it overrides nothing either; write
+   the explicit empty form (`""`, `[]`) if emptying the value is the intent.
+   See Layering above.

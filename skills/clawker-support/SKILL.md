@@ -563,8 +563,10 @@ These are the things users consistently get wrong. Keep them in mind always:
 - **Control plane (CP) is required for runtime firewall operations.** `clawker
   firewall add/remove/reload/bypass/enable/disable` all route through the CP
   daemon's AdminService gRPC. CP is bootstrapped transparently on first use,
-  but if it's down all those commands fail with `connection refused`. CP also
-  drives in-container init via mTLS Session — a container that boots without
+  but if it's down all those commands fail with `connection refused` — while
+  it is still starting up they wait for it to become ready rather than
+  failing, since the admin API opens only after CP's startup checks pass.
+  CP also drives in-container init via mTLS Session — a container that boots without
   CP available will hang in clawkerd before spawning the user CMD. Check with
   `clawker controlplane status`.
 

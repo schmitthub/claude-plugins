@@ -507,7 +507,10 @@ into the rules store at container start. To apply it to a running container
 without a restart, run `clawker firewall refresh` — it re-runs that same
 startup sync from the current project's config. It is add/update only: a rule
 *deleted* from the YAML is not pruned, so use `clawker firewall remove` for
-deletions. (This is the YAML-config counterpart to the runtime-only `clawker
+deletions — or, to clean up the store wholesale, `clawker firewall prune`:
+it removes every rule, then re-syncs only what the project config and harness
+define (`--all` removes everything and re-syncs nothing; prompts for
+confirmation unless `--yes`). (This is the YAML-config counterpart to the runtime-only `clawker
 firewall add` above — refresh closes the gap between an edited `.clawker.yaml`
 and the live rules store.)
 

@@ -206,7 +206,8 @@ User changed their clawker config but the change doesn't seem to apply.
    and `security.firewall.rules`) can be applied live with `clawker firewall
    refresh` — it re-runs the container-start sync into the rules store without
    a restart (add/update only; a rule *deleted* from the config is not pruned —
-   use `clawker firewall remove` for that). Fetch the current schema to check
+   use `clawker firewall remove`, or `clawker firewall prune` to reset the
+   store to the config-defined set). Fetch the current schema to check
    which fields are build-time vs runtime.
 
 4. **Local override hiding changes**: Check if a local override file exists

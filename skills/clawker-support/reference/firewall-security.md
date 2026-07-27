@@ -133,7 +133,10 @@ survives a fresh rules store. After editing `.clawker.yaml`, apply it live with
 `clawker firewall refresh` (re-runs the startup sync into the store without a
 container restart) instead of re-typing each `clawker firewall add`. Refresh is
 add/update only — a rule *deleted* from the YAML is not pruned; use
-`clawker firewall remove` for that.
+`clawker firewall remove` for a single rule, or `clawker firewall prune` to
+reset the store to exactly what the YAML and harness define (drops every
+runtime-only `firewall add` in one confirmed step; `--all` empties the store
+entirely).
 
 ## Method gating — the coarse write backstop
 

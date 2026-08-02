@@ -54,7 +54,10 @@ https://docs.clawker.dev/authoring-harnesses before walking the fields.
 6. **`managed_prompt`** — where clawker bakes its managed container-context
    briefing into the image (content is clawker's; the harness only names the
    destination). Build-time copy — the destination must NOT sit under a
-   declared volume, or the mount shadows it.
+   declared volume, or the mount shadows it. If the agent reads managed
+   context only from runtime-mounted state, omit the block; the deployment
+   places the briefing itself with `clawker prompt print` (stdout → wherever
+   the agent discovers bootstrap context).
 7. **`egress`** — the firewall floor, same rule vocabulary as project
    firewall rules (`dst`, optional `proto`/`port`/`path_rules`). This is a
    security boundary: declare exactly what the agent needs, no more.

@@ -159,8 +159,10 @@ update methodology and docs URLs instead.
 Plugin version lives in `.claude-plugin/plugin.json`, mirrored in the
 marketplace entry in `.claude-plugin/marketplace.json` — keep both in sync.
 Versions are calver: `YYYY.M.P` (e.g. `2026.8.1` → `2026.8.2`). **Every change
-bumps the final segment. No exceptions.** Year and month roll with the
-calendar; the final segment resets to 1 on a new month.
+to plugin content — skills, reference files, manifests — bumps the final
+segment.** Repo-level docs (README, CLAUDE.md, AGENTS.md) are not plugin
+content and do not bump. Year and month roll with the calendar; the final
+segment resets to 1 on a new month.
 
 The version IS the delivery mechanism: the marketplace caches by version, so a
 change with no bump never reaches installed users. "Is this worth a bump?" is

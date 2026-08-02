@@ -1,8 +1,10 @@
 # Clawker Plugin — Development Guide
 
-This repository is a Claude Code plugin and its marketplace in one: the
-`clawker-support` plugin lives at the repo root, and
-`.claude-plugin/marketplace.json` serves it with a relative source (`"./"`).
+This repository is an agent-skill collection, packaged for Claude Code as a
+plugin and its marketplace in one: the `clawker-support` plugin lives at the
+repo root, and `.claude-plugin/marketplace.json` serves it with a relative
+source (`"./"`). The skills themselves are agent-agnostic — any skill-aware
+coding agent can consume the `skills/` directories directly.
 It ships two skills: `skills/clawker-support` — a clawker internals expert for
 end users (setup, config, troubleshooting) — and `skills/bundle-creator` — a
 guided authoring workflow for bundles and their components (harnesses, stacks,
@@ -11,8 +13,10 @@ monitoring extensions). The shared documentation philosophy is
 
 ## Skill Plugin Conventions
 
-These are Claude Code agent skills — not libraries, apps, or scripts. They
-follow the Claude Code plugin and skill authoring conventions:
+These are agent skills — not libraries, apps, or scripts. The skill format
+(`SKILL.md` plus `reference/` files) is portable across skill-aware agents;
+the plugin and marketplace packaging follows the Claude Code authoring
+conventions:
 
 - **Use the Claude Code skill creator** (`/skill-creator` or the skill creator
   agent) for auditing skill definitions, validating SKILL.md frontmatter, and
@@ -43,7 +47,8 @@ clawker commit was verified against.
 
 Distribution is direct: users add this repo as a marketplace (or install via
 the clawker CLI), and Claude Code fetches the plugin from this repo at its
-default branch.
+default branch. Other agents consume the `skills/` directories directly —
+skill prose must never assume the reading agent is Claude Code.
 
 ## Repository Structure
 
@@ -153,15 +158,16 @@ update methodology and docs URLs instead.
 
 Plugin version lives in `.claude-plugin/plugin.json`, mirrored in the
 marketplace entry in `.claude-plugin/marketplace.json` — keep both in sync.
-**Every change bumps the patch number (`1.0.Z` → `1.0.Z+1`). No exceptions.**
+Versions are calver: `YYYY.M.P` (e.g. `2026.8.1` → `2026.8.2`). **Every change
+to plugin content — skills, reference files, manifests — bumps the final
+segment.** Repo-level docs (README, CLAUDE.md, AGENTS.md) are not plugin
+content and do not bump. Year and month roll with the calendar; the final
+segment resets to 1 on a new month.
 
 The version IS the delivery mechanism: the marketplace caches by version, so a
 change with no bump never reaches installed users. "Is this worth a bump?" is
 the wrong question: if you touched the plugin, bump it. A typo fix, a new
-reference file, and a workflow rewrite are each just the next patch.
-
-Keep it patch-only. Minor/major are reserved for a deliberate, announced change
-in how the plugin works, which effectively never happens here.
+reference file, and a workflow rewrite each get the next increment.
 
 ## Completion Gate
 
@@ -170,7 +176,7 @@ After making changes to the plugin:
 1. Check that `known-issues.md` is still accurate — remove entries for fixed
    bugs; verify reference cross-references are consistent (troubleshooting
    routing table, SKILL.md research step references)
-2. Bump the patch version in `plugin.json` AND the marketplace entry (see
+2. Bump the version in `plugin.json` AND the marketplace entry (see
    Versioning — the release pipeline requires an increment per change)
 3. In the clawker repo, bump the `clawker-plugin/` submodule pointer to the
    new commit so drift checks run against it

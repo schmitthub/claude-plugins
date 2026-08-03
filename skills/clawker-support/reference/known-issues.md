@@ -131,7 +131,9 @@ Docker daemon only through a Unix socket bind mount.
 
 Clawker finds the host socket path in this order:
 
-1. `DOCKER_HOST`, when the value starts with `unix://`
+1. `DOCKER_HOST`, when it is set. Clawker removes a `unix://` prefix and
+   does not validate the value. The Docker daemon shows the mount error
+   for a value that is not a path.
 2. The `docker.socket` key in `settings.yaml`
 3. The default path `/var/run/docker.sock`
 

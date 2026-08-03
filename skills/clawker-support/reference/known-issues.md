@@ -123,3 +123,37 @@ and the selection bug never applies. `NODE_VERSION` takes a **major** line only
 (`22`, `24`, …) — the latest LTS patch of that line is resolved per build; minor
 and patch pins are not supported. Only reach for `nvm` (and hit this bug) when
 you genuinely need multiple Node versions in one image.
+
+## Docker daemon transport: Unix socket required, TCP not supported
+
+This is a limitation, not a bug. Clawker connects its containers to the
+Docker daemon only through a Unix socket bind mount.
+
+Clawker finds the host socket path in this order:
+
+1. `DOCKER_HOST`, when it is set. Clawker removes a `unix://` prefix and
+   does not validate the value. The Docker daemon shows the mount error
+   for a value that is not a path.
+2. The `docker.socket` key in `settings.yaml`
+3. The default path `/var/run/docker.sock`
+
+This resolution supports rootless Docker, which serves the socket at
+`$XDG_RUNTIME_DIR/docker.sock`. Releases before this resolution always used
+the default path. On those releases, container create fails on a rootless
+host with: `bind source path does not exist: /var/run/docker.sock`. The fix
+is to upgrade clawker. A temporary workaround is a root-owned symlink from
+`/var/run/docker.sock` to the real socket.
+
+A daemon address that is not `unix://` (for example `tcp://`) has no socket
+file. Clawker cannot mount it. Two features do not operate in that
+configuration:
+
+- The control plane container. Its Docker client serves the firewall stack
+  and the agent watcher through the mounted socket. The `agent.from_env`
+  option does not apply to the control plane container.
+- Docker-outside-of-Docker for agents (`security.docker_socket: true`).
+
+Support for a local daemon over TCP is a planned follow-up
+([schmitthub/clawker#450](https://github.com/schmitthub/clawker/issues/450)).
+A daemon on a different machine is out of scope by design: the eBPF firewall
+attaches to cgroups on the local kernel.

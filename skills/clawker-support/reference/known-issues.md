@@ -146,7 +146,8 @@ always used the default path; on those releases, container create fails on
 a rootless host with: `bind source path does not exist:
 /var/run/docker.sock`. The fix is to upgrade clawker. Rootless Docker is
 fully supported from 2026.8.3 — see
-https://docs.clawker.dev/rootless for the two once-per-boot sudo steps.
+https://docs.clawker.dev/container-internals#rootless-docker for the two
+once-per-boot sudo steps.
 
 A daemon address that is not `unix://` (for example `tcp://`) has no socket
 file. Clawker cannot mount it. Two features do not operate in that

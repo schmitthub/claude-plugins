@@ -239,7 +239,7 @@ User reports the container fails to start or immediately exits.
 ## Rootless Docker: sudo prompts or headless start failures
 
 Applies from 2026.8.3 on a Linux host whose Docker daemon runs rootless.
-Full user doc: https://docs.clawker.dev/rootless
+Full user doc: https://docs.clawker.dev/container-internals#rootless-docker
 
 Two operations ask for `sudo` **once per boot**. Both run a small helper
 embedded in the `clawker` binary; nothing is installed on the host.

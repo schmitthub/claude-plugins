@@ -134,7 +134,8 @@ before the container starts and prints one stderr warning per lane the host
 cannot serve (GPG key material + gpg-agent socket, reachable SSH agent, git
 credential helper, `.gitconfig`). If the user saw such a warning, the failed
 lane and its cause are already named — start there. Disabled lanes are not
-checked. The container starts either way, with the failed lane off.
+checked. The container starts either way — the check only warns, and the
+failed lane fails when it is used.
 
 ### SSH not working
 

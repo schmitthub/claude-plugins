@@ -129,20 +129,25 @@ you genuinely need multiple Node versions in one image.
 This is a limitation, not a bug. Clawker connects its containers to the
 Docker daemon only through a Unix socket bind mount.
 
-Clawker finds the host socket path in this order:
+Clawker resolves the daemon address in this order (same as the `docker`
+CLI):
 
-1. `DOCKER_HOST`, when it is set. Clawker removes a `unix://` prefix and
-   does not validate the value. The Docker daemon shows the mount error
-   for a value that is not a path.
-2. The `docker.socket` key in `settings.yaml`
-3. The default path `/var/run/docker.sock`
+1. `DOCKER_HOST`, when it is set
+2. The `docker.host` key in `settings.yaml` — a full scheme-qualified
+   address, for example `unix:///run/user/1000/docker.sock`. Releases
+   before 2026.8.3 named this key `docker.socket`; a stored value
+   migrates automatically and gets a `unix://` prefix.
+3. The active docker CLI context (`docker context show`)
+4. The default path `/var/run/docker.sock`
 
-This resolution supports rootless Docker, which serves the socket at
-`$XDG_RUNTIME_DIR/docker.sock`. Releases before this resolution always used
-the default path. On those releases, container create fails on a rootless
-host with: `bind source path does not exist: /var/run/docker.sock`. The fix
-is to upgrade clawker. A temporary workaround is a root-owned symlink from
-`/var/run/docker.sock` to the real socket.
+A rootless install records its socket in the docker CLI context, so
+clawker finds it with no configuration. Releases before this resolution
+always used the default path; on those releases, container create fails on
+a rootless host with: `bind source path does not exist:
+/var/run/docker.sock`. The fix is to upgrade clawker. Rootless Docker is
+fully supported from 2026.8.3 — see
+https://docs.clawker.dev/container-internals#rootless-docker for the two
+once-per-boot sudo steps.
 
 A daemon address that is not `unix://` (for example `tcp://`) has no socket
 file. Clawker cannot mount it. Two features do not operate in that

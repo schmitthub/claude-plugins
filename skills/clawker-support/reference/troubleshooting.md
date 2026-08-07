@@ -129,6 +129,13 @@ a container.
 
 User reports SSH, GPG, or git HTTPS failures inside the container.
 
+From 2026.8.3, clawker checks each enabled credential lane against the host
+before the container starts and prints one stderr warning per lane the host
+cannot serve (GPG key material + gpg-agent socket, reachable SSH agent, git
+credential helper, `.gitconfig`). If the user saw such a warning, the failed
+lane and its cause are already named — start there. Disabled lanes are not
+checked. The container starts either way, with the failed lane off.
+
 ### SSH not working
 
 1. **Is SSH agent running on host?**
@@ -226,6 +233,39 @@ User reports the container fails to start or immediately exits.
    clawker controlplane status
    clawker controlplane up         # idempotent — brings CP up if needed
    ```
+
+---
+
+## Rootless Docker: sudo prompts or headless start failures
+
+Applies from 2026.8.3 on a Linux host whose Docker daemon runs rootless.
+Full user doc: https://docs.clawker.dev/rootless
+
+Two operations ask for `sudo` **once per boot**. Both run a small helper
+embedded in the `clawker` binary; nothing is installed on the host.
+
+- **"Completing it needs sudo"** during control plane start: the control
+  plane cannot mount its own BPF filesystem on a rootless daemon. The
+  helper mounts a delegated BPF filesystem; the control plane then retries
+  on its own. Without this step the egress firewall cannot load.
+- **"Mapping it for the container user needs sudo (once per boot)"** at
+  container create or start in bind mode: a rootless daemon maps the host
+  user to container root, so a plain bind mount arrives root-owned inside
+  the container. The helper attaches an ID-mapped view of the workspace and
+  clawker mounts that view instead. Views do not survive a reboot, which is
+  why the prompt repeats after each boot.
+
+Headless (no terminal) runs cannot show a sudo prompt and fail with an
+error that names the situation. The remedy is one interactive run after
+each boot (for example `clawker controlplane up`, or a normal
+`clawker run`); afterwards headless runs work until the next reboot.
+
+Other rootless requirements when things fail without a prompt:
+
+- The rootless daemon must run on the same machine as the CLI — a remote
+  daemon is refused for these steps by design.
+- `/etc/subuid` and `/etc/subgid` need subordinate ID ranges for the user
+  (a standard rootless Docker install sets these up).
 
 ---
 
